@@ -116,7 +116,7 @@ double computeFitness(double countAnt, double TP, double FP, double FN) {
     }
     double coverage = computeCoverage(TP,FN);
     double succinctness = computeSuccinctness(countAnt);
-    if(succinctness > 1) {
+    if(countAnt == 0) {
         return 0;
     }
     return (w1*((accuracy)*(coverage)))+(w2*succinctness);
@@ -500,11 +500,83 @@ void viewSwarm(vector<particle> &swarm) {
     }
 }
 
+void resetAll(vector<particle> &swarm, int &amount) {
+    viewAccuracy = false;
+    viewClassification = false;
+    accMax = 0;
+    globalBestParticle.attributeExistence.clear();
+    globalBestParticle.operatorParity.clear();
+    globalBestParticle.attributeValues.clear();
+    globalBestFitness = 0;
+    swarm.clear();
+    swarm = createParticleSet(amount);
+}
+
+void viewRule(particle &p) {
+    string op = "";
+    int ruleCount = 0;
+    for (int i = 0; i < dimensions; i++) {
+        if (p.position.attributeExistence[i] > 0 && p.position.attributeValues[i] > 0 && p.position.attributeValues[i] < 1) {
+            ruleCount++;
+            if (!nominalTypes[i]) {
+                if (p.position.operatorParity[i] > 0) {
+                    op = ">=";
+                } else {
+                    op = "<";
+                }
+            } else {
+                if (p.position.operatorParity[i] > 0) {
+                    op = "=";
+                } else {
+                    op = "!=";
+                }
+            }
+            if (ruleCount == 1) {
+                cout << "If ";
+            } else {
+                cout << "&  ";
+            }
+            if (!nominalTypes[i]) {
+                cout << "attribute " << i << " " << op << " " << destandardize(p.position.attributeValues[i],i) << endl;
+            } else {
+                cout << "attribute " << i << " " << op << " " << destandardizeNominal(p.position.attributeValues[i],i) << endl;
+            }
+        }
+    }
+    cout << "Then class = " << classification << endl;
+}
+
+void viewResult() {
+    // shows the result of the best found rule
+    viewAccuracy = true; // uncomment if you want to see the accuracy per rule
+    // viewClassification = true; // uncomment if you want to see the classification table per rule
+    particle bestP = createParticle(globalBestParticle.attributeExistence,globalBestParticle.operatorParity,globalBestParticle.attributeValues);
+    cout << "Rule determined by PSO for class " << classification << ": " << endl;
+    viewRule(bestP);
+    double fitness = getFitness(bestP);
+    cout << "Fitness: " << fitness << endl<< endl;
+    // cout << "Highest accuracy found: " << accMax << endl << endl;
+}
+
+void runPSO(vector<particle> &swarm, int amount, int classAmount, int iterations) {
+    // runs the PSO algorithm for all classes
+    for(int i = 1; i <= classAmount; i++) {
+        classification = i;
+        resetAll(swarm, amount);
+        // computes the result
+        for(int j = 0; j < iterations; j++) { 
+            updateParticleSet(swarm);
+            cout << j << ": " << globalBestFitness << endl;
+        }
+        viewResult(); 
+    }
+}
+
 int main() {
-	int amount = 1000; // amount of particles
+	int amount = 300; // amount of particles
     classification = 0; 
-    int classAmount = 2; // amount of classes
-    int iterations = 100; // amount of iterations the algorithm is run per class
+    int classAmount = 3; // amount of classes
+    int iterations = 50; // amount of iterations the algorithm is run per class
 	srand(time(NULL)); // sets a random seed dependent on time to avoid using the same seed each run
 
     processData("wine.data");
@@ -513,35 +585,9 @@ int main() {
     // adult dataset
     // nominalAttributesAdult();
 
-    
-
 	vector<particle> swarm = createParticleSet(amount);
 
-    for(int i = 1; i <= classAmount; i++) {
-        classification = i;
-        viewAccuracy = false;
-        viewClassification = false;
-        accMax = 0;
-        globalBestParticle.attributeExistence.clear();
-        globalBestParticle.operatorParity.clear();
-        globalBestParticle.attributeValues.clear();
-        globalBestFitness = 0;
-        swarm.clear();
-        swarm = createParticleSet(amount);
-        int j = 0;
-        for(int j = 0; j < iterations; j++) { 
-            updateParticleSet(swarm);
-            cout<< j << ": " << globalBestFitness << endl;
-            // j++;
-        }
-        viewAccuracy = true;
-        viewClassification = true;
-        particle bestP = createParticle(globalBestParticle.attributeExistence,globalBestParticle.operatorParity,globalBestParticle.attributeValues);
-        viewParticle(bestP);
-        double fitness = getFitness(bestP);
-        cout << "Fitness: " << fitness << endl;
-        cout << "Highest accuracy found:" << accMax << endl;
-    }
+    runPSO(swarm, amount, classAmount, iterations);
     
     // viewVector(globalBestParticle.attributeExistence);
     // viewVector(globalBestParticle.operatorParity);

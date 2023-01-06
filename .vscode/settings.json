@@ -6,6 +6,7 @@
         "unordered_map": "cpp",
         "vector": "cpp",
         "system_error": "cpp",
-        "*.tcc": "cpp"
+        "*.tcc": "cpp",
+        "iostream": "cpp"
     }
 }
