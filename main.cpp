@@ -609,10 +609,10 @@ int main() {
     int iterations = 100; // amount of iterations the algorithm is run per class
 	srand(time(NULL)); // sets a random seed dependent on time to avoid using the same seed each run
 
-    //rice dataset
+    // rice dataset
     // processData("Rice_Cammeo_Osmancik.arff");
     // setAttributeNamesRice();
-    //wine dataset
+    // wine dataset
     processData("wine.data");
     setAttributeNamesWine();
     // adult dataset
