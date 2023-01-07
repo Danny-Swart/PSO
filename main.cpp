@@ -9,19 +9,20 @@
 using namespace std;
 
 /*
-        dataSize        dimensions
-rice    3810            7
-wine    178             13
-adult   32561-2399      14
-zoo     101             17
+        dataSize        dimensions  classAmount
+rice    3810            7           2
+wine    178             13          3
+adult   32561-2399      14          2
+zoo     101             17          7
 */
 
 const int dimensions = 17; // amount of attributes
 const int dataSize = 101; //amount of entries
+const int classAmount = 7; // amount of classes 
 
 string dataX[dataSize][dimensions]; // table of attributes
 int dataY[dataSize]; // table of classications
-int classification; // current class to get a rule
+int classification = 0; // current class to get a rule
 double Vmin[dimensions] = {__DBL_MAX__}; // all minimal values of real data
 double Vmax[dimensions] = { 0 }; // all maximum values of real data
 bool viewAccuracy = false; // bool to get the accuracy of a programn
@@ -614,7 +615,7 @@ void viewResult() {
     // cout << "Highest accuracy found: " << accMax << endl << endl;
 }
 
-void runPSO(vector<particle> &swarm, int amount, int classAmount, int iterations) {
+void runPSO(vector<particle> &swarm, int amount, int iterations) {
     // runs the PSO algorithm for all classes
     for(int i = 1; i <= classAmount; i++) {
         classification = i;
@@ -622,7 +623,7 @@ void runPSO(vector<particle> &swarm, int amount, int classAmount, int iterations
         // computes the result
         for(int j = 0; j < iterations; j++) { 
             updateParticleSet(swarm);
-            // cout << j <<  ": " << globalBestFitness << endl;
+            // cout << j <<  ": " << globalBestFitness << endl; // used to keep progress of the programn, mainly for bigger datasets
         }
         viewResult(); 
     }
@@ -630,8 +631,6 @@ void runPSO(vector<particle> &swarm, int amount, int classAmount, int iterations
 
 int main() {
 	int amount = 500; // amount of particles
-    classification = 0; 
-    int classAmount = 7; // amount of classes
     int iterations = 100; // amount of iterations the algorithm is run per class
 	srand(time(NULL)); // sets a random seed dependent on time to avoid using the same seed each run
 
@@ -654,5 +653,5 @@ int main() {
 
 	vector<particle> swarm = createParticleSet(amount);
 
-    runPSO(swarm, amount, classAmount, iterations);
+    runPSO(swarm, amount, iterations);
 }
