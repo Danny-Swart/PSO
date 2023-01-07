@@ -10,7 +10,7 @@ using namespace std;
 
 /*
         dataSize        dimensions
-rice    3810            8
+rice    3810            7
 wine    178             13
 adult   32561-2399      14
 */
@@ -27,6 +27,7 @@ bool viewAccuracy = false; // bool to get the accuracy of a programn
 bool viewClassification = false; // bool to get the classification table for debugging purposes
 double accMax = 0; // maximum accuracy found for the rule being created
 vector<string> nominalStrings[dimensions]; // all nominal values per attribute
+vector<string> attributeNames; // names of the attributes of the dataset
 
 // a bool array indicating if a value is nominal or not
 // rice & wine datasets
@@ -97,12 +98,12 @@ double computeCoverage(double TP, double FN) {
     return TP/(TP+FN);
 }
 
-double computeSuccinctness(double countAnt) {
+double computeSuccinctness(double attCount) {
     // computes the succinctness of the classification rule made by the particle
-    return 1-(countAnt-1)/dimensions;
+    return 1-(attCount-1)/dimensions;
 }
 
-double computeFitness(double countAnt, double TP, double FP, double FN) {
+double  computeFitness(double attCount, double TP, double FP, double FN) {
     // computes the fitness of the classification rule made by the particle
     // uses the accuracy, coverage and succinctness values and two constant weights
     const double w1 = 0.8;
@@ -115,8 +116,8 @@ double computeFitness(double countAnt, double TP, double FP, double FN) {
         cout << "Accuracy: " << accuracy << endl;
     }
     double coverage = computeCoverage(TP,FN);
-    double succinctness = computeSuccinctness(countAnt);
-    if(countAnt == 0) {
+    double succinctness = computeSuccinctness(attCount);
+    if(attCount == 0) {
         return 0;
     }
     return (w1*((accuracy)*(coverage)))+(w2*succinctness);
@@ -190,28 +191,28 @@ void computeClassicationTable (particle &p, double &TP, double &FP, double &TN, 
     }
 }
 
-double getCountAnt(particle &p) {
+double getAttCount(particle &p) {
     // returns the amount of attributes in the classification rule
-    double countAnt = 0;
+    double attCount = 0;
     for (int i = 0; i < dimensions; i++) {
         if (p.position.attributeExistence[i] > 0) {
-            countAnt++;
+            attCount++;
         }
     }
-    return countAnt;
+    return attCount;
 }
  
 double getFitness(particle &p) {
     // returns the fitness of the classification rule of the particle
     int dataYclass[dataSize];
-    double countAnt = getCountAnt(p);
+    double attCount = getAttCount(p);
     double TP = 0, FP = 0, TN = 0, FN = 0;
     giveClassification(p,dataYclass);
     computeClassicationTable(p, TP, FP, TN, FN, dataYclass);
     if (viewClassification) {
         cout << "Classifications: TP:" << TP << " FP: " << FP << " TN: " << TN << " FN: " << FN << endl; 
     }
-    return computeFitness(countAnt, TP, FP, FN);
+    return computeFitness(attCount, TP, FP, FN);
 }
 
 double computeVelocity(double prevVelocity, double currentBest, double globalBest, double currentPosition) {
@@ -225,7 +226,7 @@ double computeVelocity(double prevVelocity, double currentBest, double globalBes
 	double cognitiveLearningRate = 2; // learning rate based on personal best position
 	double socialLearningRate = 2; // learning rate based on swarm's best position
     double constrictionFactor = 1; // factor to reduce the velocity each time
-    double inertia = 0.5; 
+    double inertia = 0.9; 
     double result = constrictionFactor*
     (inertia*prevVelocity+
 	cognitiveLearningRate*randDouble()*(currentBest-currentPosition)+
@@ -267,7 +268,7 @@ particle createRandomParticle() {
 	vector<double> operatorParity = randVector(randDouble);
 	vector<double> attributeValues = randVector(randDouble);
     particle p = createParticle(attributeExistence, operatorParity, attributeValues);
-    p.bestFitness = getFitness(p);     // sets fitness of initial particle
+    p.bestFitness = getFitness(p); // sets fitness of initial particle
     return p;
 }
 
@@ -327,7 +328,10 @@ void updateParticle(particle &p) {
         bound(p.position.attributeExistence[i]);
         bound(p.position.operatorParity[i]);
         bound(p.position.attributeValues[i]);
-        
+
+        if (p.position.attributeValues[i] == 0 || p.position.attributeValues[i] == 1) {
+            p.position.attributeExistence[i] = 0;
+        }
     }
     
     // if it is it's own best or the swarm's best position (determined by fitness)
@@ -341,14 +345,6 @@ void updateParticle(particle &p) {
         globalBestFitness = fitness;
         globalBestParticle = p.best;
     }
-}
-
-void updateParticleSet(vector<particle> &swarm) {
-    // updates the whole swarm
-	for (particle &p : swarm) {
-		updateParticle(p);
-        // viewParticle(p);
-	}
 }
 
 void processData(string filename) {
@@ -437,6 +433,23 @@ void nominalAttributesAdult() {
     nominalStrings[13] = temp;
 }
 
+void setAttributeNamesRice() {
+    attributeNames.resize(dimensions);
+    attributeNames = {"Area", "Perimeter", "Major Axis Length", "Minor Axis Length", "Eccentricity", "Convex Area", "Extent"};
+}
+
+void setAttributeNamesWine() {
+    attributeNames.resize(dimensions);
+    attributeNames = {"Alcohol", "Malic acid", "Ash", "Alcalinity of ash", "Magnesium", "Total phenols", "Flavanoids", "Nonflavanoid phenols", "Proanthocyanins", "Color intensity", "Hue", "OD280/OD315 of diluted wines", "Proline" };
+}
+
+void setAttributeNamesAdult() {
+    attributeNames.resize(dimensions);
+    attributeNames = {"Age","Workclass","Final Weight","Education","Education-num","Marital Status","Occupation", "Relationship","Race","Sex","Capital gain","Capital loss","Hours per week","Native country"};
+    
+}
+
+
 void determineExtrema () {
     // detemines the extrema per attribute
     for (int j = 0; j < dimensions; j++) {
@@ -482,10 +495,10 @@ void viewParticle(const particle &p) {
     // viewVector(p.best.attributeExistence);
     // viewVector(p.best.operatorParity);
     // viewVector(p.best.attributeValues);
-    // cout << "_______________ Velocity _______________" << endl;
-    // viewVector(p.velocity.attributeExistence);
-    // viewVector(p.velocity.operatorParity);
-    // viewVector(p.velocity.attributeValues);
+    cout << "_______________ Velocity _______________" << endl;
+    viewVector(p.velocity.attributeExistence);
+    viewVector(p.velocity.operatorParity);
+    viewVector(p.velocity.attributeValues);
     // cout << "Fitness: " << p.bestFitness << endl;
 }
 
@@ -500,7 +513,16 @@ void viewSwarm(vector<particle> &swarm) {
     }
 }
 
+void updateParticleSet(vector<particle> &swarm) {
+    // updates the whole swarm
+	for (particle &p : swarm) {
+		updateParticle(p);
+        // viewParticle(p);
+	}
+}
+
 void resetAll(vector<particle> &swarm, int &amount) {
+    // resets all variables for a new run of PSO and creates a new swarm
     viewAccuracy = false;
     viewClassification = false;
     accMax = 0;
@@ -512,49 +534,57 @@ void resetAll(vector<particle> &swarm, int &amount) {
     swarm = createParticleSet(amount);
 }
 
+string determineOperator(particle &p, int i) {
+    // returns the operator to display for the rule
+    if (!nominalTypes[i]) {
+        if (p.position.operatorParity[i] > 0) {
+            return ">=";
+        } else {
+            return "<";
+        }
+    } else {
+        if (p.position.operatorParity[i] > 0) {
+            return "=";
+        } else {
+            return "!="; 
+        }
+    }
+}
+
 void viewRule(particle &p) {
-    string op = "";
+    // function which displays the rule created by the best particle in the PSO algorithm
+    string op = ""; // operator to be displayed, later determined by "determineOperator(p,i)"
     int ruleCount = 0;
     for (int i = 0; i < dimensions; i++) {
-        if (p.position.attributeExistence[i] > 0 && p.position.attributeValues[i] > 0 && p.position.attributeValues[i] < 1) {
+        if (p.position.attributeExistence[i] > 0) {
             ruleCount++;
-            if (!nominalTypes[i]) {
-                if (p.position.operatorParity[i] > 0) {
-                    op = ">=";
-                } else {
-                    op = "<";
-                }
-            } else {
-                if (p.position.operatorParity[i] > 0) {
-                    op = "=";
-                } else {
-                    op = "!=";
-                }
-            }
+            op = determineOperator(p,i);
             if (ruleCount == 1) {
                 cout << "If ";
             } else {
                 cout << "&  ";
             }
             if (!nominalTypes[i]) {
-                cout << "attribute " << i << " " << op << " " << destandardize(p.position.attributeValues[i],i) << endl;
+                cout << attributeNames[i] << " " << op << " " << destandardize(p.position.attributeValues[i],i) << endl;
             } else {
-                cout << "attribute " << i << " " << op << " " << destandardizeNominal(p.position.attributeValues[i],i) << endl;
+                cout << attributeNames[i] << " " << op << " " << destandardizeNominal(p.position.attributeValues[i],i) << endl;
             }
         }
     }
     cout << "Then class = " << classification << endl;
 }
 
+
 void viewResult() {
     // shows the result of the best found rule
-    viewAccuracy = true; // uncomment if you want to see the accuracy per rule
-    // viewClassification = true; // uncomment if you want to see the classification table per rule
     particle bestP = createParticle(globalBestParticle.attributeExistence,globalBestParticle.operatorParity,globalBestParticle.attributeValues);
+    // viewParticle(bestP);
     cout << "Rule determined by PSO for class " << classification << ": " << endl;
+    viewAccuracy = true; // uncomment if you want to see the accuracy per rule
+    viewClassification = true; // uncomment if you want to see the classification table per rule
     viewRule(bestP);
     double fitness = getFitness(bestP);
-    cout << "Fitness: " << fitness << endl<< endl;
+    cout << "Fitness: " << fitness << endl << endl;
     // cout << "Highest accuracy found: " << accMax << endl << endl;
 }
 
@@ -566,41 +596,33 @@ void runPSO(vector<particle> &swarm, int amount, int classAmount, int iterations
         // computes the result
         for(int j = 0; j < iterations; j++) { 
             updateParticleSet(swarm);
-            cout << j << ": " << globalBestFitness << endl;
+            // cout << j <<  ": " << globalBestFitness << endl;
         }
         viewResult(); 
     }
 }
 
 int main() {
-	int amount = 300; // amount of particles
+	int amount = 400; // amount of particles
     classification = 0; 
     int classAmount = 3; // amount of classes
-    int iterations = 50; // amount of iterations the algorithm is run per class
+    int iterations = 100; // amount of iterations the algorithm is run per class
 	srand(time(NULL)); // sets a random seed dependent on time to avoid using the same seed each run
 
+    //rice dataset
+    // processData("Rice_Cammeo_Osmancik.arff");
+    // setAttributeNamesRice();
+    //wine dataset
     processData("wine.data");
-    determineExtrema();
-
+    setAttributeNamesWine();
     // adult dataset
+    // processData("adult.data");
+    // setAttributeNamesAdult();
     // nominalAttributesAdult();
+
+    determineExtrema();
 
 	vector<particle> swarm = createParticleSet(amount);
 
     runPSO(swarm, amount, classAmount, iterations);
-    
-    // viewVector(globalBestParticle.attributeExistence);
-    // viewVector(globalBestParticle.operatorParity);
-    // viewVector(globalBestParticle.attributeValues);
-
-    // globalBestParticle = p.best;
-    // globalBestFitness = p.bestFitness;
-    // cout << computeFitness(7,10,10,10) << endl;
-    // viewParticle(p);
-    // cout << "Current fitness: " << getFitness(p) << endl;
-    // for (int i = 0; i < 100; i++) {
-        // viewParticle(p);
-        // cout << "Current fitness: " << getFitness(p) << endl;
-        // updateParticle(p);
-    // }
 }
