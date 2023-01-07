@@ -362,7 +362,7 @@ void processData(string filename) {
     string text_line;
     int i = 0;
     int count = 0; // used the count the amount of unknown lines, which can be used to optimize datasets
-    while (getline(inFile, text_line)) {
+    while (getline(inFile, text_line)) { // code partially from https://stackoverflow.com/questions/49183212/only-reading-certain-lines-of-data-from-arff-file-into-struct-c
         
         if (text_line.length() == 0) {
             // skips empty lines
@@ -370,7 +370,7 @@ void processData(string filename) {
         }
         
         const char c = text_line[0];
-        if ((c == '@') || (c == '%') || (c == ' ')) {
+        if ((c == '@') || (c == '%') || (c == ' ')) { 
             // skips over comments in data files
             continue;
         }
