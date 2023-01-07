@@ -13,10 +13,11 @@ using namespace std;
 rice    3810            7
 wine    178             13
 adult   32561-2399      14
+zoo     101             17
 */
 
-const int dimensions = 13; // amount of attributes
-const int dataSize = 178; //amount of entries
+const int dimensions = 17; // amount of attributes
+const int dataSize = 101; //amount of entries
 
 string dataX[dataSize][dimensions]; // table of attributes
 int dataY[dataSize]; // table of classications
@@ -31,9 +32,11 @@ vector<string> attributeNames; // names of the attributes of the dataset
 
 // a bool array indicating if a value is nominal or not
 // rice & wine datasets
-bool nominalTypes[dimensions] = { false };
+// bool nominalTypes[dimensions] = { false };
 // adult dataset
 // bool nominalTypes[dimensions] = { false, true, false, true, false, true, true, true, true, true, false, false, false, true };
+// zoo datatype
+bool nominalTypes[dimensions] = { true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true };
 
 struct basicParticle {
   vector<double> attributeExistence; 
@@ -226,7 +229,7 @@ double computeVelocity(double prevVelocity, double currentBest, double globalBes
 	double cognitiveLearningRate = 2; // learning rate based on personal best position
 	double socialLearningRate = 2; // learning rate based on swarm's best position
     double constrictionFactor = 1; // factor to reduce the velocity each time
-    double inertia = 0.9; 
+    double inertia = 0.7; 
     double result = constrictionFactor*
     (inertia*prevVelocity+
 	cognitiveLearningRate*randDouble()*(currentBest-currentPosition)+
@@ -391,11 +394,11 @@ void processData(string filename) {
             //     dataX[i][j] = text_line; // sets the attribute data into the dataX array
             // }
             // wine dataset
-            if (j == 0) { 
-                dataY[i] = stoi(text_line); // sets the class data into the dataY array
-            } else {
-                dataX[i][j-1] = text_line; // sets the attribute data into the dataX array
-            }
+            // if (j == 0) { 
+            //     dataY[i] = stoi(text_line); // sets the class data into the dataY array
+            // } else {
+            //     dataX[i][j-1] = text_line; // sets the attribute data into the dataX array
+            // }
             // adult dataset
             //  if (j == dimensions) { 
             //     if (text_line == " <=50K") { // sets nominal class data to int to work with our algorithm
@@ -406,6 +409,12 @@ void processData(string filename) {
             // } else {
             //     dataX[i][j] = text_line; // sets the attribute data into the dataX array
             // }
+            // zoo dataset
+            if (j == dimensions) {
+                dataY[i] = stoi(text_line);
+            } else {
+                dataX[i][j] = text_line;    
+            }
             j++;
         }
         i++;
@@ -433,6 +442,19 @@ void nominalAttributesAdult() {
     nominalStrings[13] = temp;
 }
 
+void nominalAttributesZoo() {
+    // sets the nominalStrings array up for the adult dataset
+    vector<string> temp = {"aardvark", "antelope", "bear", "boar", "buffalo", "calf", "cavy", "cheetah", "deer", "dolphin", "elephant", "fruitbat", "giraffe", "girl", "goat", "gorilla", "hamster", "hare", "leopard", "lion", "lynx", "mink", "mole", "mongoose", "opossum", "oryx", "platypus", "polecat", "pony", "porpoise", "puma", "pussycat", "raccoon", "reindeer", "seal", "sealion", "squirrel", "vampire", "vole", "wallaby", "wolf", "chicken", "crow", "dove", "duck", "flamingo", "gull", "hawk", "kiwi", "lark", "ostrich", "parakeet", "penguin", "pheasant", "rhea", "skimmer", "skua", "sparrow", "swan", "vulture", "wren", "pitviper", "seasnake", "slowworm", "tortoise", "tuatara", "bass", "carp", "catfish", "chub", "dogfish", "haddock", "herring", "pike", "piranha", "seahorse", "sole", "stingray", "tuna", "frog", "frog", "newt", "toad", "flea", "gnat", "honeybee", "housefly", "ladybird", "moth", "termite", "wasp", "clam", "crab", "crayfish", "lobster", "octopus", "scorpion", "seawasp", "slug", "starfish", "worm"};
+    nominalStrings[0] = temp;
+    temp = {"0", "1"};
+    for (int i = 1; i < 17; i++) {
+        nominalStrings[i] = temp;
+    }
+    nominalStrings[13].clear();
+    temp = {"0","2","4","5","6","8"};
+    nominalStrings[13] = temp;
+}
+
 void setAttributeNamesRice() {
     attributeNames.resize(dimensions);
     attributeNames = {"Area", "Perimeter", "Major Axis Length", "Minor Axis Length", "Eccentricity", "Convex Area", "Extent"};
@@ -446,7 +468,11 @@ void setAttributeNamesWine() {
 void setAttributeNamesAdult() {
     attributeNames.resize(dimensions);
     attributeNames = {"Age","Workclass","Final Weight","Education","Education-num","Marital Status","Occupation", "Relationship","Race","Sex","Capital gain","Capital loss","Hours per week","Native country"};
-    
+}
+
+void setAttributeNamesZoo() {
+    attributeNames.resize(dimensions);
+    attributeNames = {"Animal Name", "Hair", "Feathers", "Eggs", "Milk", "Airborne", "Aquatic", "Predator", "Toothed", "Backbone", "Breathes", "Venomous", "Fins", "Legs", "Tail", "Domestic", "Catsize"};
 }
 
 
@@ -603,9 +629,9 @@ void runPSO(vector<particle> &swarm, int amount, int classAmount, int iterations
 }
 
 int main() {
-	int amount = 400; // amount of particles
+	int amount = 500; // amount of particles
     classification = 0; 
-    int classAmount = 3; // amount of classes
+    int classAmount = 7; // amount of classes
     int iterations = 100; // amount of iterations the algorithm is run per class
 	srand(time(NULL)); // sets a random seed dependent on time to avoid using the same seed each run
 
@@ -613,12 +639,16 @@ int main() {
     // processData("Rice_Cammeo_Osmancik.arff");
     // setAttributeNamesRice();
     // wine dataset
-    processData("wine.data");
-    setAttributeNamesWine();
+    // processData("wine.data");
+    // setAttributeNamesWine();
     // adult dataset
     // processData("adult.data");
     // setAttributeNamesAdult();
     // nominalAttributesAdult();
+    // zoo dataset
+    processData("zoo.data");
+    setAttributeNamesZoo();
+    nominalAttributesZoo();
 
     determineExtrema();
 
